@@ -1,0 +1,1005 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>七宗罪 vs 七美德</title>
+<style>
+  :root{
+    --gold: #c3a362; --gold-light: #d4bc8c; --gold-dark: #826c39;
+    --sin-bg: #1a1a19; --sin-bg-soft: #242422; --sin-text: #e8e2d5; --sin-text-soft: #a39b8d; --sin-text-mute: #6e685d; --sin-line: rgba(195,163,98,.15); --sin-accent: #c3a362;
+    --virtue-bg: #f7f5f0; --virtue-bg-soft: #eeece5; --virtue-text: #2b2a27; --virtue-text-soft: #615d55; --virtue-text-mute: #a09a90; --virtue-line: rgba(130,108,57,.12); --virtue-accent: #826c39;
+    --font-serif: "Songti SC", "SimSun", "STSong", serif; 
+    --font-sans: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; 
+    --font-number: "Times New Roman", "Songti SC", "STSong", serif;
+  }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body{ margin:0; padding:0; -webkit-font-smoothing:antialiased; }
+  body{ font-family:var(--font-sans); background:#111; color:var(--sin-text); min-height:100vh; display:flex; justify-content:center; overflow-x: hidden;}
+  .app{ width:100%; max-width:480px; min-height:100vh; display:flex; flex-direction:column; position:relative; overflow-x:hidden; background: var(--sin-bg); }
+  .screen{ display:none; flex-direction:column; flex:1; padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom); }
+  .screen.active{ display:flex; animation:fadeIn .4s ease; }
+  @keyframes fadeIn{ from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);} }
+  @keyframes spin { 100% { transform: rotate(360deg); } }
+  @keyframes slideUp { from{opacity:0; transform:translateY(20px);} to{opacity:1; transform:translateY(0);} }
+  @keyframes twinkle { 0%, 100% { opacity: 0.2; transform: scale(0.8); } 50% { opacity: 1; transform: scale(1.2); } }
+  @keyframes tiltBeam { 0%, 100% { transform: rotate(0deg); } 25% { transform: rotate(-3deg); } 75% { transform: rotate(3deg); } }
+  @keyframes compensatePan { 0%, 100% { transform: rotate(0deg); } 25% { transform: rotate(3deg); } 75% { transform: rotate(-3deg); } }
+  @keyframes borderGlow { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+  @keyframes floatUp { 0% { transform: translateY(0) scale(1); opacity: 0; } 20% { opacity: 0.8; } 100% { transform: translateY(-100px) scale(0.5); opacity: 0; } }
+  .btn{ width:100%; border:none; padding:18px; font-family:var(--font-serif); font-size:16px; font-weight:600; letter-spacing:.3em; cursor:pointer; transition:transform .15s, box-shadow .3s, background .3s; border-radius: 8px;}
+  .btn:active{ transform:scale(.98); }
+  .btn.dark{ background:transparent; color:var(--gold-light); border:1px solid var(--sin-accent); }
+  .btn.dark:hover{ background: rgba(195,163,98,.08); box-shadow: 0 0 20px rgba(195,163,98,.15); }
+  .btn.light{ background:var(--virtue-text); color:var(--virtue-bg); box-shadow: 0 6px 16px rgba(0,0,0,.15); }
+  .btn.light:hover{ background:#1a1a18; }
+
+  #auth{ padding:24px; background:radial-gradient(circle at center, #1c1c1a 0%, #0d0d0c 100%); align-items:center; justify-content:center; position:relative; overflow: hidden;}
+  .auth-frame { position: absolute; top: 5%; bottom: 5%; left: 12px; right: 12px; pointer-events: none; z-index: 1; border-radius: 24px; border: 2px solid transparent; background: linear-gradient(135deg, #0d0d0c, #0d0d0c) padding-box, linear-gradient(90deg, rgba(195,163,98,.3), rgba(195,163,98,.8), rgba(195,163,98,.3)) border-box; background-size: 200% 200%; animation: borderGlow 4s linear infinite; box-shadow: 0 0 30px rgba(195,163,98,.1) inset; }
+  .auth-frame::before { content: ''; position: absolute; inset: 8px; border: 1px solid rgba(195,163,98,.15); border-radius: 16px; }
+  .auth-frame::after { content: ''; position: absolute; top: -2px; left: 50%; transform: translateX(-50%); width: 100px; height: 4px; background: linear-gradient(90deg, transparent, var(--gold-light), transparent); border-radius: 4px; box-shadow: 0 0 16px var(--gold-light); }
+  .corner-deco { position: absolute; width: 18px; height: 18px; z-index: 2; pointer-events: none; }
+  .c-tl { top: 12px; left: 12px; border-top: 2px solid var(--gold); border-left: 2px solid var(--gold); border-radius: 8px 0 0 0; }
+  .c-tr { top: 12px; right: 12px; border-top: 2px solid var(--gold); border-right: 2px solid var(--gold); border-radius: 0 8px 0 0; }
+  .c-bl { bottom: 12px; left: 12px; border-bottom: 2px solid var(--gold); border-left: 2px solid var(--gold); border-radius: 0 0 0 8px; }
+  .c-br { bottom: 12px; right: 12px; border-bottom: 2px solid var(--gold); border-right: 2px solid var(--gold); border-radius: 0 0 8px 0; }
+  .stars-bg { position: absolute; inset: 0; pointer-events: none; z-index: 0;}
+  .star { position: absolute; background: #fff; border-radius: 50%; box-shadow: 0 0 6px #fff; animation: twinkle 3s infinite alternate; }
+  .s1 { width: 2px; height: 2px; top: 20%; left: 15%; animation-delay: 0s; }
+  .s2 { width: 3px; height: 3px; top: 30%; right: 20%; animation-delay: 1s; }
+  .s3 { width: 1.5px; height: 1.5px; bottom: 25%; left: 25%; animation-delay: 2s; }
+  .s4 { width: 2px; height: 2px; bottom: 15%; right: 30%; animation-delay: 0.5s; }
+  .particle { position: absolute; background: var(--gold-light); border-radius: 50%; box-shadow: 0 0 10px var(--gold); animation: floatUp 5s infinite ease-in; opacity: 0; }
+  .p1 { width: 3px; height: 3px; bottom: 10%; left: 20%; animation-delay: 0s; }
+  .p2 { width: 2px; height: 2px; bottom: 30%; right: 25%; animation-delay: 2s; }
+  .p3 { width: 4px; height: 4px; bottom: 5%; left: 70%; animation-delay: 1s; animation-duration: 7s; }
+  .auth-rings { position: absolute; inset: 0; pointer-events: none; display: flex; align-items: center; justify-content: center; z-index: 1; }
+  .ring { position: absolute; border-radius: 50%; border: 1px solid rgba(195,163,98,.06); }
+  .r1 { width: 240px; height: 240px; border-style: dashed; animation: spin 40s linear infinite; }
+  .r2 { width: 340px; height: 340px; border: 1px solid rgba(195,163,98,.04); }
+  .r3 { width: 440px; height: 440px; border: 1px solid rgba(195,163,98,.02); }
+  .auth-visual { position: relative; width: 200px; height: 160px; margin-bottom: 24px; display: flex; align-items: center; justify-content: center; z-index: 2;}
+  .balance-scale { width: 100%; height: 100%; overflow: visible; filter: drop-shadow(0 0 10px rgba(195,163,98,0.2));}
+  .scale-stroke { stroke: var(--gold); stroke-width: 2.5; fill: none; stroke-linecap: round; stroke-linejoin: round;}
+  .scale-fill { fill: var(--gold); }
+  .scale-shadow { fill: rgba(195,163,98,0.1); stroke: none; }
+  
+  .auth-title{ font-family:var(--font-sans); font-size:36px; font-weight:700; margin:0 0 16px; color:var(--sin-text); letter-spacing: 2px; z-index: 2; text-shadow: 0 4px 15px rgba(0,0,0,.8);}
+  /* 这里加了光效 */
+  .auth-title .vs{ 
+    font-family:var(--font-serif); 
+    font-size:24px; 
+    color:var(--gold-light); 
+    margin:0 12px; 
+    font-weight:400; 
+    font-style:italic; 
+    letter-spacing:0;
+    text-shadow: 0 0 12px var(--gold-light), 0 0 20px var(--gold);
+    display: inline-block;
+  }
+
+  .auth-sub{ font-family:var(--font-sans); font-size:13px; color:var(--sin-text-soft); margin:0 0 32px; letter-spacing:.2em; z-index: 2;}
+  .auth-form{ width:100%; max-width:280px; z-index:10;}
+  .code-input{ width:100%; height:56px; background:rgba(255,255,255,.03); border:1px solid var(--sin-line); border-radius:8px; text-align:center; font-family:var(--font-number); font-size:24px; letter-spacing:.8em; color:var(--sin-text); outline:none; padding-left:.8em; transition: all .3s; }
+  .code-input:focus{ border-color:var(--gold); box-shadow: 0 0 20px rgba(195,163,98,.2); background:rgba(255,255,255,.05); }
+  .code-input::placeholder{ color:var(--sin-text-mute); letter-spacing:.2em; font-size:16px; font-family:var(--font-sans); }
+  .auth-error{ color:#d96359; font-size:13px; text-align:center; margin:12px 0 0; opacity:0; transition:.2s; height:14px; }
+  .auth-error.show{ opacity:1; }
+
+  #intro{ background:var(--sin-bg); }
+  .side-sin, .side-virtue{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:28px 20px; position:relative; }
+  .side-sin{ background:linear-gradient(180deg, var(--sin-bg) 0%, var(--sin-bg-soft) 100%); }
+  .side-virtue{ background:linear-gradient(180deg, var(--virtue-bg-soft) 0%, var(--virtue-bg) 100%); }
+  .side-sin::before, .side-virtue::before { content: ''; position: absolute; width: 250px; height: 250px; border-radius: 50%; filter: blur(70px); opacity: .6; z-index: 0; }
+  .side-sin::before { background: rgba(195,163,98,.12); top: 10%; left: -20%; }
+  .side-virtue::before { background: rgba(130,108,57,.1); bottom: 10%; right: -20%; }
+  .intro-content { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; }
+  .intro-icon{ width:44px; height:44px; stroke-width:1.2; fill:none; margin-bottom:12px; }
+  .side-sin .intro-icon{ stroke:var(--gold-light); }
+  .side-virtue .intro-icon{ stroke:var(--gold-dark); }
+  .side-title-en{ font-family:var(--font-number); font-size:12px; letter-spacing:.5em; margin-bottom:8px; font-weight:500;}
+  .side-sin .side-title-en{ color:var(--sin-text-mute); }
+  .side-virtue .side-title-en{ color:var(--virtue-text-mute); }
+  .side-title-cn{ font-family:var(--font-serif); font-size:38px; font-weight:700; letter-spacing:.2em; margin:0 0 16px; }
+  .side-sin .side-title-cn{ color:var(--sin-text); text-shadow: 0 4px 20px rgba(195,163,98,.2);}
+  .side-virtue .side-title-cn{ color:var(--virtue-text); text-shadow: 0 4px 20px rgba(0,0,0,.05);}
+  .side-rule{ width:36px; height:2px; margin:0 auto 16px; position:relative; }
+  .side-sin .side-rule{ background:var(--sin-accent); }
+  .side-virtue .side-rule{ background:var(--virtue-accent); }
+  .side-rule::after{ content:""; position:absolute; left:50%; top:50%; width:6px; height:6px; margin:-3px 0 0 -3px; transform:rotate(45deg); }
+  .side-sin .side-rule::after{ background:var(--sin-accent); }
+  .side-virtue .side-rule::after{ background:var(--virtue-accent); }
+  .side-desc{ font-size:14px; line-height:2.2; letter-spacing:.15em; margin:0; }
+  .side-sin .side-desc{ color:var(--sin-text-soft); }
+  .side-virtue .side-desc{ color:var(--virtue-text-soft); }
+  .intro-divider{ height:40px; background:linear-gradient(180deg, var(--sin-bg-soft) 50%, var(--virtue-bg-soft) 50%); display:flex; align-items:center; justify-content:center; position:relative; z-index:2; }
+  .intro-divider::before{ content:""; position:absolute; left:40px; right:40px; height:1px; top:50%; background:var(--gold); opacity:.3; }
+  .divider-badge{ width:32px; height:32px; border-radius:50%; background:var(--sin-bg); border:1px solid var(--gold); display:flex; align-items:center; justify-content:center; font-family:var(--font-serif); font-size:15px; color:var(--gold); position:relative; z-index:1; box-shadow: 0 0 15px rgba(195,163,98,.3); }
+  .intro-foot{ background:var(--virtue-bg); padding:20px 24px 28px; border-top:1px solid var(--virtue-line); text-align:center; }
+  .intro-foot .btn{ max-width:320px; margin:0 auto 12px; }
+
+  #quiz{ background:var(--sin-bg); transition:background .4s; padding-bottom:20px; }
+  .quiz-top{ display:flex; justify-content:space-between; padding:16px 20px; font-size:13px; border-bottom:1px solid var(--sin-line); transition:border-color .4s; }
+  .quiz-top .phase{ color:var(--sin-accent); display:flex; align-items:center; gap:6px; font-weight: 500; letter-spacing: 2px;}
+  .quiz-top .phase::before{ content:''; width:6px; height:6px; background:currentColor; border-radius:50%; box-shadow: 0 0 8px currentColor; }
+  .quiz-top .count{ color:var(--sin-text-mute); font-family:var(--font-number); font-size: 14px; }
+  .progress-track{ height:3px; background:var(--sin-bg-soft); }
+  .progress-fill{ height:100%; width:0; background:var(--sin-accent); transition:width .4s, background .4s; box-shadow: 0 0 10px var(--sin-accent); }
+  .quiz-body{ flex:1; padding:28px 20px; display:flex; flex-direction:column; }
+  .q-head{ display:flex; align-items:center; gap:12px; margin-bottom:24px; }
+  .q-head .num{ font-family:var(--font-number); font-size:28px; color:var(--sin-accent); font-weight: bold;}
+  .q-head .rule{ flex:1; height:1px; background:linear-gradient(90deg, var(--sin-line), transparent); }
+  .q-head .label{ font-family:var(--font-number); font-size:11px; color:var(--sin-text-mute); letter-spacing:.3em; }
+  .qtext{ font-family:var(--font-serif); font-size:22px; line-height:1.7; font-weight:500; color:var(--sin-text); margin:0 0 auto; letter-spacing: .5px; }
+  .options{ display:flex; flex-direction:column; gap:12px; margin-top:40px; }
+  .option{ display:flex; align-items:center; gap:16px; padding:16px 20px; background:rgba(255,255,255,.02); border:1px solid var(--sin-line); border-radius:10px; color:var(--sin-text-soft); font-size:15px; cursor:pointer; transition:all .2s; text-align:left; position: relative; overflow: hidden; letter-spacing: 1px;}
+  .option::after { content:''; position: absolute; left:0; top:0; bottom:0; width:0; background:var(--sin-accent); opacity: 0; transition: all .3s; }
+  .option .mark{ width:22px; height:22px; flex-shrink:0; z-index: 1;}
+  .option .mark svg{ width:100%; height:100%; fill:none; stroke:var(--sin-text-mute); stroke-width:1.5; stroke-linecap:round; stroke-linejoin:round; transition: stroke .3s;}
+  .option span:last-child { z-index: 1; }
+  .option.selected{ border-color:var(--sin-accent); background:rgba(195,163,98,.08); color:var(--sin-text); box-shadow: 0 4px 15px -5px rgba(195,163,98,.2); }
+  .option.selected::after { width: 4px; opacity: 1; }
+  .option.selected .mark svg{ stroke:var(--sin-accent); }
+  .back-btn { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 24px auto 8px; padding: 12px 24px; width: fit-content; background: transparent; border: 1px solid var(--sin-line); border-radius: 40px; color: var(--sin-text-soft); font-family: var(--font-sans); font-size: 14px; letter-spacing: 0.1em; cursor: pointer; transition: all 0.2s ease; opacity: 0.7; }
+  .back-btn:hover { opacity: 1; border-color: var(--sin-accent); color: var(--sin-accent); }
+  .back-btn:active { transform: scale(0.96); }
+  .back-btn svg { width: 16px; height: 16px; stroke: currentColor; stroke-width: 2; fill: none; }
+  #quiz.theme-virtue .back-btn { border-color: var(--virtue-line); color: var(--virtue-text-soft); }
+  #quiz.theme-virtue .back-btn:hover { border-color: var(--virtue-accent); color: var(--virtue-accent); }
+  #quiz.theme-virtue{ background:var(--virtue-bg); }
+  #quiz.theme-virtue .quiz-top{ border-color:var(--virtue-line); }
+  #quiz.theme-virtue .quiz-top .phase{ color:var(--virtue-accent); }
+  #quiz.theme-virtue .quiz-top .count{ color:var(--virtue-text-mute); }
+  #quiz.theme-virtue .progress-track{ background:var(--virtue-bg-soft); }
+  #quiz.theme-virtue .progress-fill{ background:var(--virtue-accent); box-shadow: 0 0 10px var(--virtue-accent); }
+  #quiz.theme-virtue .q-head .num{ color:var(--virtue-accent); }
+  #quiz.theme-virtue .q-head .label{ color:var(--virtue-text-mute); }
+  #quiz.theme-virtue .qtext{ color:var(--virtue-text); }
+  #quiz.theme-virtue .option{ background:rgba(0,0,0,.02); border-color:var(--virtue-line); color:var(--virtue-text-soft); }
+  #quiz.theme-virtue .option::after { background: var(--virtue-accent); }
+  #quiz.theme-virtue .option.selected{ border-color:var(--virtue-accent); background:rgba(130,108,57,.05); color:var(--virtue-text); box-shadow: 0 4px 15px -5px rgba(130,108,57,.2); }
+  #quiz.theme-virtue .option.selected .mark svg{ stroke:var(--virtue-accent); }
+
+  #result{ background:var(--virtue-bg); overflow-y:auto; }
+  .res-inner{ padding:24px 20px 40px; max-width: 480px; margin: 0 auto; }
+  .res-header{ text-align:center; margin-bottom:24px; }
+  .res-title{ font-family:var(--font-serif); font-size:22px; font-weight:700; color:var(--virtue-text); margin:0 0 24px; letter-spacing: 1px;}
+  .res-title .hl{ color:var(--virtue-accent); }
+  .res-dual{ display:flex; gap:16px; }
+  .res-card{ flex:1; padding:24px 16px; border-radius:16px; text-align:center; animation: slideUp .5s ease both;}
+  .res-card.sin{ background:var(--sin-bg); color:var(--sin-text); border:1px solid var(--sin-line); box-shadow: 0 8px 24px rgba(0,0,0,.15); animation-delay: 0.1s;}
+  .res-card.virtue{ background:#fff; color:var(--virtue-text); border:1px solid var(--virtue-line); box-shadow: 0 8px 24px rgba(0,0,0,.06); animation-delay: 0.2s;}
+  .res-card-label{ font-size:13px; opacity:.7; margin-bottom:12px; letter-spacing: 2px;}
+  .res-card-name{ font-family:var(--font-serif); font-size:32px; font-weight:700; margin:0 0 8px; letter-spacing: 2px;}
+  .res-card-name.sin-name{ color:var(--sin-accent); text-shadow: 0 0 24px rgba(195,163,98,.4); }
+  .res-card-name.virtue-name{ color:var(--virtue-accent); }
+  .res-card-pct{ font-family:var(--font-number); font-size:16px; opacity:.9;}
+
+  .summary-text { text-align:left; background: #e8e2d5; color: #6b5734; padding: 16px 20px; border-radius: 12px; font-size: 14px; margin: 0 auto 24px; width: 100%; line-height: 1.8; font-family: var(--font-serif); position: relative; border-left: 5px solid var(--gold-dark); animation: slideUp .5s ease both; animation-delay: 0.3s; letter-spacing: .5px; }
+
+  .merged-wrap{ background:#fff; border-radius:16px; padding:28px 20px; margin-bottom:24px; border:1px solid var(--virtue-line); text-align:center; box-shadow: 0 6px 24px rgba(0,0,0,.04); animation: slideUp .5s ease both; animation-delay: 0.4s;}
+  .merged-title{ font-family:var(--font-serif); font-size:18px; font-weight:700; margin-bottom:6px; color: var(--virtue-text); letter-spacing: 1px;}
+  .merged-subtitle { font-size:13px; color:#888; margin-bottom:20px; }
+  .radar-wrap{ width:100%; max-width:320px; margin:0 auto; }
+  .radar-wrap svg{ width:100%; height:auto; display:block; overflow:visible; }
+
+  .block{ border-radius:16px; margin-bottom:24px; overflow:hidden; box-shadow: 0 4px 16px rgba(0,0,0,.04);}
+  .block.sin-block{ background:var(--sin-bg); border:1px solid var(--sin-line); color:var(--sin-text); }
+  .block.virtue-block{ background:#fff; border:1px solid var(--virtue-line); color:var(--virtue-text); }
+  .block-head{ display:flex; justify-content:space-between; align-items:center; padding:20px; border-bottom:1px solid; }
+  .sin-block .block-head{ border-color:var(--sin-line); }
+  .virtue-block .block-head{ border-color:var(--virtue-line); }
+  .block-title{ font-family:var(--font-serif); font-size:17px; font-weight:700; margin:0; letter-spacing: 1px;}
+  .save-btn{ background:none; border:1px solid; padding:6px 14px; border-radius:8px; font-size:12px; cursor:pointer; transition: all .2s; letter-spacing: 1px;}
+  .save-btn:hover{ opacity: .8; }
+  .sin-block .save-btn{ color:var(--sin-accent); border-color:var(--sin-accent); }
+  .virtue-block .save-btn{ color:var(--virtue-accent); border-color:var(--virtue-accent); }
+  .block-body{ padding:24px 20px; }
+
+  .rank-row{ display:flex; align-items:center; margin-bottom:16px; }
+  .rank-name{ width:52px; font-size:14px; flex-shrink: 0; letter-spacing: 1px;}
+  .sin-block .rank-name{ color:var(--sin-text-soft); }
+  .virtue-block .rank-name{ color:var(--virtue-text-soft); }
+  .rank-track{ flex:1; height:6px; border-radius:3px; margin:0 14px; overflow:hidden; }
+  .sin-block .rank-track{ background:rgba(255,255,255,.06); }
+  .virtue-block .rank-track{ background:rgba(0,0,0,.06); }
+  .rank-fill{ height:100%; width:0; transition:width 1s cubic-bezier(0.22, 1, 0.36, 1); }
+  .sin-block .rank-fill{ background:var(--sin-accent); box-shadow: 0 0 8px var(--sin-accent); }
+  .virtue-block .rank-fill{ background:var(--virtue-accent); box-shadow: 0 0 8px var(--virtue-accent); }
+  .rank-val{ width:44px; font-family:var(--font-number); font-size:14px; text-align:right; flex-shrink: 0; }
+  .sin-block .rank-val{ color:var(--sin-text-mute); }
+  .virtue-block .rank-val{ color:var(--virtue-text-mute); }
+
+  .insight-list{ margin-top:28px; padding-top:28px; border-top:1px dashed; }
+  .sin-block .insight-list{ border-color:var(--sin-line); }
+  .virtue-block .insight-list{ border-color:var(--virtue-line); }
+  .insight-item{ margin-bottom:20px; }
+  .insight-head{ display:flex; justify-content:space-between; margin-bottom:10px; font-size:15px; font-weight:600; font-family: var(--font-serif); padding:6px 10px; border-radius:6px; letter-spacing: 1px;}
+  .sin-block .insight-head { background: rgba(195,163,98,.08); color: var(--sin-accent);}
+  .virtue-block .insight-head { background: rgba(130,108,57,.06); color: var(--virtue-accent);}
+  .insight-text{ font-size:14px; line-height:1.8; margin:0; opacity:.85; padding: 0 4px; letter-spacing: .5px;}
+
+  .res-foot{ text-align:center; margin-top:36px; }
+  .res-foot .btn{ max-width:320px; margin:0 auto 20px; }
+  .res-foot p{ font-size:12px; color:var(--virtue-text-mute); margin:0; }
+
+  .preview-mask{ position:fixed; inset:0; background:rgba(0,0,0,.85); display:none; align-items:center; justify-content:center; z-index:999; padding:20px; backdrop-filter: blur(4px);}
+  .preview-mask.show{ display:flex; }
+  .preview-box{ width:100%; max-width:400px; display:flex; flex-direction:column; gap:16px; align-items:center; animation: fadeIn .3s ease;}
+  .preview-tip{ color:#fff; font-size:14px; margin:0; opacity: .8; letter-spacing: 1px;}
+  .preview-box img{ width:100%; border-radius:12px; box-shadow: 0 10px 30px rgba(0,0,0,.5);}
+  .preview-close{ background:var(--gold); color:#111; border:none; padding:14px 48px; border-radius:30px; font-weight:600; font-size:16px; cursor:pointer; transition: transform .2s; letter-spacing: 2px;}
+  .preview-close:active { transform: scale(.95); }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- 验证页 -->
+  <section class="screen active" id="auth">
+    <div class="auth-frame">
+      <div class="corner-deco c-tl"></div><div class="corner-deco c-tr"></div><div class="corner-deco c-bl"></div><div class="corner-deco c-br"></div>
+    </div>
+    <div class="stars-bg">
+      <div class="star s1"></div><div class="star s2"></div><div class="star s3"></div><div class="star s4"></div>
+      <div class="particle p1"></div><div class="particle p2"></div><div class="particle p3"></div>
+    </div>
+    <div class="auth-rings"><div class="ring r1"></div><div class="ring r2"></div><div class="ring r3"></div></div>
+    <div class="auth-visual">
+      <svg class="balance-scale" viewBox="0 0 260 210">
+        <path class="scale-stroke" d="M 95 195 L 165 195" stroke-width="4" stroke-linecap="square"/>
+        <path class="scale-stroke" d="M 110 185 L 150 185 L 145 175 L 115 175 Z" stroke-width="2" fill="rgba(195,163,98,0.15)"/>
+        <line class="scale-stroke" x1="130" y1="175" x2="130" y2="65" stroke-width="3"/>
+        <polygon class="scale-stroke" points="130,105 136,112 130,119 124,112" stroke-width="2" fill="rgba(195,163,98,0.2)"/>
+        <circle cx="130" cy="112" r="1.5" class="scale-fill"/>
+        <path class="scale-stroke" d="M 130 65 L 130 50" stroke-width="2"/>
+        <path class="scale-stroke" d="M 130 36 L 133 44 L 141 47 L 133 50 L 130 58 L 127 50 L 119 47 L 127 44 Z" stroke-width="1.8" fill="none"/>
+        <circle cx="130" cy="47" r="1.8" class="scale-fill"/>
+        <g style="transform-origin: 130px 85px; animation: tiltBeam 6s ease-in-out infinite;">
+          <path class="scale-stroke" d="M 45 85 Q 87.5 75 130 85 T 215 85" stroke-width="3"/>
+          <g style="transform-origin: 50px 85px; animation: compensatePan 6s ease-in-out infinite;">
+            <g transform="translate(50, 60)"><path d="M 6 8 A 9 9 0 1 1 6 -8 A 12 12 0 1 0 6 8 Z" fill="none" stroke="var(--gold)" stroke-width="2" stroke-linejoin="round" /></g>
+          </g>
+          <g style="transform-origin: 210px 85px; animation: compensatePan 6s ease-in-out infinite;">
+            <g transform="translate(210, 60)">
+              <circle cx="0" cy="0" r="6" class="scale-stroke" fill="none"/><line class="scale-stroke" x1="0" y1="-9" x2="0" y2="-14"/><line class="scale-stroke" x1="0" y1="9" x2="0" y2="14"/><line class="scale-stroke" x1="-9" y1="0" x2="-14" y2="0"/><line class="scale-stroke" x1="9" y1="0" x2="14" y2="0"/><line class="scale-stroke" x1="-6.5" y1="-6.5" x2="-9.5" y2="-9.5"/><line class="scale-stroke" x1="6.5" y1="6.5" x2="9.5" y2="9.5"/><line class="scale-stroke" x1="-6.5" y1="6.5" x2="-9.5" y2="9.5"/><line class="scale-stroke" x1="6.5" y1="-6.5" x2="9.5" y2="-9.5"/>
+            </g>
+          </g>
+          <g style="transform-origin: 50px 85px; animation: compensatePan 6s ease-in-out infinite;">
+            <line class="scale-stroke" x1="50" y1="86" x2="20" y2="160" stroke-width="1.5"/><line class="scale-stroke" x1="50" y1="86" x2="80" y2="160" stroke-width="1.5"/><line class="scale-stroke" x1="50" y1="86" x2="50" y2="160" stroke-width="1.5" opacity="0.3"/><path class="scale-stroke" d="M 10 160 Q 50 185 90 160" stroke-width="2.5"/><path class="scale-shadow" d="M 10 160 Q 50 185 90 160 L 50 160 Z"/>
+          </g>
+          <g style="transform-origin: 210px 85px; animation: compensatePan 6s ease-in-out infinite;">
+            <line class="scale-stroke" x1="210" y1="86" x2="180" y2="160" stroke-width="1.5"/><line class="scale-stroke" x1="210" y1="86" x2="240" y2="160" stroke-width="1.5"/><line class="scale-stroke" x1="210" y1="86" x2="210" y2="160" stroke-width="1.5" opacity="0.3"/><path class="scale-stroke" d="M 170 160 Q 210 185 250 160" stroke-width="2.5"/><path class="scale-shadow" d="M 170 160 Q 210 185 250 160 L 210 160 Z"/>
+          </g>
+        </g>
+      </svg>
+    </div>
+    <h1 class="auth-title">七宗罪<span class="vs">vs</span>七美德</h1>
+    <p class="auth-sub">请输入访问码以开启测试</p>
+    <div class="auth-form">
+      <input type="text" id="codeInput" class="code-input" maxlength="4" placeholder="＿＿＿＿" autocomplete="off">
+      <p class="auth-error" id="authError">访问码不正确</p>
+      <button class="btn dark" id="authBtn" style="margin-top:32px;">进 入</button>
+    </div>
+  </section>
+
+  <!-- 首页 -->
+  <section class="screen" id="intro">
+    <div class="side-sin">
+      <div class="intro-content">
+        <svg class="intro-icon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <div class="side-title-en">SIN</div>
+        <h1 class="side-title-cn">七宗罪</h1>
+        <div class="side-rule"></div>
+        <p class="side-desc">傲慢 · 嫉妒 · 暴怒 · 懒惰<br>贪婪 · 暴食 · 色欲</p>
+      </div>
+    </div>
+    <div class="intro-divider"><div class="divider-badge">与</div></div>
+    <div class="side-virtue">
+      <div class="intro-content">
+        <svg class="intro-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="22"/><line x1="2" y1="12" x2="4" y2="12"/><line x1="20" y1="12" x2="22" y2="12"/><line x1="5" y1="5" x2="6.5" y2="6.5"/><line x1="17.5" y1="17.5" x2="19" y2="19"/><line x1="5" y1="19" x2="6.5" y2="17.5"/><line x1="17.5" y1="6.5" x2="19" y2="5"/></svg>
+        <div class="side-title-en">VIRTUE</div>
+        <h1 class="side-title-cn">七美德</h1>
+        <div class="side-rule"></div>
+        <p class="side-desc">谦卑 · 慷慨 · 贞洁 · 仁爱<br>耐心 · 节制 · 勤勉</p>
+      </div>
+    </div>
+    <div class="intro-foot">
+      <button class="btn light" id="startBtn">开 始 测 试</button>
+    </div>
+  </section>
+
+  <!-- 答题页 -->
+  <section class="screen" id="quiz">
+    <div class="quiz-top">
+      <span class="phase" id="quizPhase">七宗罪</span>
+      <span class="count" id="quizCount">01 / 42</span>
+    </div>
+    <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+    <div class="quiz-body">
+      <div class="q-head">
+        <span class="num" id="qNum">01</span>
+        <span class="rule"></span>
+        <span class="label" id="qLabel">SIN</span>
+      </div>
+      <h2 class="qtext" id="qText">题目</h2>
+      <div class="options" id="options"></div>
+      <button class="back-btn" id="backBtn">
+        <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg> 上一题
+      </button>
+    </div>
+  </section>
+
+  <!-- 结果页 -->
+  <section class="screen" id="result">
+    <div class="res-inner" id="resultCaptureArea">
+      <div class="res-header">
+        <h1 class="res-title">你的 <span class="hl">七宗罪 vs 七美德</span> 测试结果</h1>
+        <div class="res-dual">
+          <div class="res-card sin">
+            <div class="res-card-label">七宗罪之首</div>
+            <div class="res-card-name sin-name" id="topSinName">—</div>
+            <div class="res-card-pct" id="topSinPct">—</div>
+          </div>
+          <div class="res-card virtue">
+            <div class="res-card-label">七美德之首</div>
+            <div class="res-card-name virtue-name" id="topVirtueName">—</div>
+            <div class="res-card-pct" id="topVirtuePct">—</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="summary-text" id="summaryText">正在分析你的底色...</div>
+
+      <div class="merged-wrap">
+        <h3 class="merged-title">十四维人格全貌</h3>
+        <div class="merged-subtitle">左侧为七宗罪，右侧为七美德。</div>
+        <div class="radar-wrap" style="margin-bottom:20px;"><svg id="mergedRadar" viewBox="0 0 340 320"></svg></div>
+        <button class="btn dark" style="margin:0 auto; font-size:13px; padding:12px 20px; width:fit-content; border-radius:30px;" onclick="saveMergedImage(this)">保存十四维全貌</button>
+      </div>
+
+      <div class="block sin-block" id="sinDetailBlock">
+        <div class="block-head">
+          <h3 class="block-title">七宗罪维度明细</h3>
+          <button class="save-btn" onclick="saveImage('sin', this)">保存此图</button>
+        </div>
+        <div class="block-body">
+          <div class="radar-wrap" style="max-width:280px; margin-bottom:24px;"><svg id="sinRadar" viewBox="0 0 300 300"></svg></div>
+          <div id="sinRankList"></div>
+          <div class="insight-list" id="sinInsightList"></div>
+        </div>
+      </div>
+
+      <div class="block virtue-block" id="virtueDetailBlock">
+        <div class="block-head">
+          <h3 class="block-title">七美德维度明细</h3>
+          <button class="save-btn" onclick="saveImage('virtue', this)">保存此图</button>
+        </div>
+        <div class="block-body">
+          <div class="radar-wrap" style="max-width:280px; margin-bottom:24px;"><svg id="virtueRadar" viewBox="0 0 300 300"></svg></div>
+          <div id="virtueRankList"></div>
+          <div class="insight-list" id="virtueInsightList"></div>
+        </div>
+      </div>
+
+      <div class="res-foot">
+        <button class="btn light" id="restart">重 新 测 试</button>
+        <p>仅供娱乐与自我觉察 · 不构成任何心理诊断</p>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div class="preview-mask" id="previewMask">
+  <div class="preview-box">
+    <p class="preview-tip">长按保存到相册</p>
+    <img id="previewImg" alt="结果">
+    <button class="preview-close" id="previewClose">关 闭</button>
+  </div>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const ACCESS_CODE = '7zd7';
+
+const SINS = {
+  pride: { 
+    n:'傲慢', 
+    tHigh:'你对自己的能力有着绝对的自信，习惯在团队中掌控全局。面对批评时，你的防御机制会迅速启动。这种强势让你极具领导力，但也容易让你在无意中屏蔽掉外界的不同声音。', 
+    tMid:'你拥有健康的自尊，遇到分歧时虽然心里会有些不舒服，但通常能听进别人的意见。你渴望证明自己，但不会为了维持优越感而彻底拒绝反思。', 
+    tLow:'你极少被优越感支配，面对他人的指出和批评时，能较快地跳出情绪去冷静思考。你不依赖主导局面来获得安全感，内在十分平实。' 
+  },
+  greed: { 
+    n:'贪婪', 
+    tHigh:'你拥有很强的成就驱动力。对资源和物质的安全感渴望，让你充满行动力，但偶尔也会被“还不够”的焦虑裹挟，满足感总是转瞬即逝。', 
+    tMid:'你对物质与资源有正常的渴望，懂得争取也懂得满足。你不容易被无底洞般的欲望控制，能够把握现实与理想的尺度。', 
+    tLow:'你对物质和资源的执念很浅，不易被“匮乏感”绑架。相较于向外抓取，你更看重内心的自足与平静。' 
+  },
+  lust:  { 
+    n:'色欲', 
+    tHigh:'你对美的感知力很强。感性冲动是活力的源泉，但如果不加克制，很容易因为对方的外表而迅速在脑海中美化对方，需要一点理智的缰绳来保护你。', 
+    tMid:'你对美和感官体验抱有欣赏，但通常能分清欲望与现实。你不会轻易被一时的氛围冲昏头脑，保持着清醒的判断。', 
+    tLow:'你对感官欲望有着极高的掌控力，极少因外表或冲动打破原则。你更看重深度的精神连接，而非浅层的感官刺激。' 
+  },
+  envy:  { 
+    n:'嫉妒', 
+    tHigh:'你对身边人的成功极其敏感，向上比较极易打破你的内心平和。当看到别人获得你期盼的事物时，强烈的失落感与不甘会占据上风，你很容易陷入内耗。', 
+    tMid:'偶尔的对比与羡慕是人之常情，你也会有失落感，但你通常能较快地调整心态。你更倾向于把这种不甘转化为专注自身成长的动力。', 
+    tLow:'你对他人的成就有着极高的包容度，不易陷入攀比。你专注于自己的节奏，真心为他人的闪光点鼓掌，内心拥有很强的安定感。' 
+  },
+  wrath: { 
+    n:'暴怒', 
+    tHigh:'你的情绪唤醒门槛较低，反应直接。一旦感受到被冒犯，愤怒的情绪会在心中停留很久，甚至容易在争执中口不择言。如果能稍微慢半拍表达，这份力量会变得更具威慑力。', 
+    tMid:'你具备一定的情绪边界感，该生气时会表达，但也懂得适可而止。你通常能将愤怒控制在合理的范围内。', 
+    tLow:'你拥有极其稳定的情绪内核，极少被激怒。面对冒犯与冲突，你更倾向于平和沟通，展现出极高的涵养。' 
+  },
+  gluttony:{ 
+    n:'暴食', 
+    tHigh:'你高度依赖物质或感官享受来代偿情绪。无论是因为无聊还是压力，你都很难克制住进食或消费的冲动，事后又容易陷入后悔。需要警惕过度依赖。', 
+    tMid:'你偶尔会用美食或购物来犒劳自己、排解压力，但你具备一定的觉察力，能保持适度。你懂得享受生活，也不至于让欲望彻底失控。', 
+    tLow:'你极少通过过度进食或消费依赖来逃避情绪。即便感到压力或无聊，你也有更健康的宣泄渠道，对身体的掌控力很强。' 
+  },
+  sloth: { 
+    n:'懒惰', 
+    tHigh:'你有着强烈的“节能”倾向，即便空闲，也会本能地回避那些高消耗的事情。在缺乏明确期限或外部压力时，拖延和找借口逃避会成为你的常态。', 
+    tMid:'你偶尔会有拖延的念头，面对长时间专注的任务也会想逃避，但在关键时刻总能推动自己去完成任务。你具备正常的行动力，懂得张弛有度。', 
+    tLow:'你拥有极强的行动力与自律性，极少因逃避而拖延。哪怕任务枯燥漫长，你也能高效推进，不轻易被惰性击败。' 
+  }
+};
+
+const VIRTUES = {
+  humility: { 
+    n:'谦卑', 
+    tHigh:'你有清醒的自我认知，明白自己并非世界的中心。这并非压抑自我，而是基于对未知的敬畏，让你始终保持开放的学习心态。', 
+    tMid:'你拥有适度的谦逊，懂得在自信与低调间寻找平衡。你既能肯定自我价值，也愿意接纳他人的建议。', 
+    tLow:'你拒绝刻意维持低调，更愿意直接展现自己的才华。你有着强烈的自我主张，不轻易屈从于主流的谦虚要求。' 
+  },
+  charity:  { 
+    n:'慷慨', 
+    tHigh:'你具备强烈的利他倾向，能在给予中获得充沛的意义感。这说明你拥有足够的心理资源与安全感，但在爱别人时也要记得爱自己。', 
+    tMid:'你在帮助他人时，通常会评估自身的能力范围。你乐于分享，但也不会让过度付出成为自己的负担。', 
+    tLow:'你极其注重自我边界的保护，倾向于先照顾好自己。你对于资源的分配十分谨慎，不轻易做无底线的妥协。' 
+  },
+  chastity: { 
+    n:'贞洁', 
+    tHigh:'你有清晰的边界感与延迟满足能力。在亲密关系中，这种克制源于你对长期价值和深度连接的笃定认同。', 
+    tMid:'你在亲密关系中保持着理智与感性的平衡。你既享受当下的浪漫，也会对未来的关系走向保持负责的态度。', 
+    tLow:'你对待感情和欲望更加自由洒脱，不被传统的框架束缚。你更注重当下的体验，而非长远的道德枷锁。' 
+  },
+  kindness: { 
+    n:'仁爱', 
+    tHigh:'你具备高水平的共情能力，能敏锐察觉他人的需求。这种温柔是非常稀缺的社会资本，但请务必留一份给自己。', 
+    tMid:'你有着温和的共情力，愿意在他人困难时伸出援手。但你也能区分“别人的课题”与“自己的课题”，不会过度背负别人的情绪。', 
+    tLow:'你有着理性的边界感，不易被他人的情绪过度消耗。你更注重解决问题的实质，而非提供无底线的情绪价值。' 
+  },
+  patience: { 
+    n:'耐心', 
+    tHigh:'你对不确定性和延迟满足有极高的容忍度。这源于内心的安定感，让你在浮躁喧闹的环境中依然能保持定力。', 
+    tMid:'你懂得等待的意义，但在面对极端的低效时也会适度表达不满。你能在耐性与急迫感之间找到一个平衡点。', 
+    tLow:'你追求高效与即时反馈，对拖沓和不确定性感到厌烦。你更倾向于快速推进事物，而不是被动等待。' 
+  },
+  temperance:{ 
+    n:'节制', 
+    tHigh:'你拥有极强的自我控制力。不仅能很好地控制休闲时间，极少因冲动做出不理智决定，更不会用报复性消费或熬夜来发泄情绪，掌控感极强。', 
+    tMid:'你懂得在享受与克制之间切换。你既不会过度压抑自己的欲望，也能防止休闲时间的失控，在冲动面前基本能保持理智。', 
+    tLow:'你更倾向于释放欲望，较难控制休闲时间，偶尔会通过冲动消费或发泄来寻求痛快。你崇尚“及时行乐”，认为适度放纵是生活的调剂。' 
+  },
+  diligence:{ 
+    n:'勤勉', 
+    tHigh:'你拥有极强的内在驱动力。哪怕没有外界监督，也能凭着超强行动力去完成目标；即便取得阶段性成果，也不会停下精进的脚步。行动派就是你。', 
+    tMid:'你对工作与生活抱有责任心，想到的事情通常会去行动。你能踏实完成任务，但如果在没有监督的情况下取得阶段性成果，偶尔也会想停下歇一歇。', 
+    tLow:'你不太愿意被目标和纪律束缚，往往停留在计划阶段，较难立刻付诸行动。面对需要长期精进的任务，你更倾向于寻找轻松的捷径。' 
+  }
+};
+
+const RAW_QS = [
+  // 傲慢
+  {d:'pride', q:'在团队协作中，我常常认为自己的判断比其他人更准确，并试图主导局面。'}, 
+  {d:'pride', q:'当别人指出我的缺点时，我的第一反应往往是找理由反驳，很难立马冷静思考。'}, 
+  {d:'pride', q:'当别人在某方面比我优秀时，我内心会感到不舒服，并试图在其他地方找回优越感。'}, 
+  // 贪婪
+  {d:'greed', q:'我很少对现状感到满足，总是渴望获取更多的财富、人脉或社会资源。'}, 
+  {d:'greed', q:'当我获得想要的资源之后，满足感维持的时间通常比较短暂，很快又会萌生新的需求。'}, 
+  {d:'greed', q:'我喜欢囤积或积累资源（如金钱、物品），哪怕暂时用不上，看着它们增加我才会觉得安全。'}, 
+  // 色欲
+  {d:'lust', q:'我脑海里常常出现难以克制的亲密画面，对日常专注形成干扰。'}, 
+  {d:'lust', q:'只要对方长在我的审美点上，哪怕理智告诉我对方不靠谱，我还是会忍不住想靠近。'}, 
+  {d:'lust', q:'我很容易因为一个人的外表或气质产生好感，并迅速在脑海中美化对方。'}, 
+  // 嫉妒
+  {d:'envy', q:'看到别人在社交平台上展示优越的生活状态时，我会忍不住产生自我怀疑和比较。'}, 
+  {d:'envy', q:'看到曾经不如自己的人突然获得成功，我很难维持内心的平和。'}, 
+  {d:'envy', q:'身边人收获我一直期盼的事物时，我心底容易生出失落与不甘。'}, 
+  // 暴怒
+  {d:'wrath', q:'发生争执时，我容易口不择言说出伤人的话，事后往往又会陷入懊悔。'}, 
+  {d:'wrath', q:'我一旦感受到被冒犯，愤怒的情绪会在心中停留很久，不容易消散。'}, 
+  {d:'wrath', q:'当事情没有按我的预期发展时，我会很容易感到烦躁，甚至向周围的人传递低气压。'}, 
+  // 暴食
+  {d:'gluttony', q:'哪怕完全不饿，只要觉得无聊，我就会下意识地找点东西来吃或想要买点什么。'}, 
+  {d:'gluttony', q:'哪怕清楚事后大概率会后悔，但在当下那一刻，我依然很难克制进食或消费的冲动。'}, 
+  {d:'gluttony', q:'在感到压力或情绪低落时，我经常需要依靠高热量食物或购物来获得安慰。'}, 
+  // 懒惰
+  {d:'sloth', q:'即便空闲，我也会本能地回避那些需要高度消耗脑力和体力的事情。'}, 
+  {d:'sloth', q:'面对没有明确期限或外在压力的任务，我很容易一拖再拖，直到最后一刻。'}, 
+  {d:'sloth', q:'如果任务需要长时间专注，我会本能地想找借口去逃避，或者把精力转移到轻松的事情上。'}, 
+
+  // 谦卑
+  {d:'humility', q:'我很少在人前刻意炫耀自己的成就，因为我清楚自己还有很多不足。'}, 
+  {d:'humility', q:'哪怕对方的建议语气并不友善，只要内容有价值，我都能放下情绪去采纳。'}, 
+  {d:'humility', q:'在人群中，我更享受作为倾听者和观察者，而非一定要成为焦点。'}, 
+  // 慷慨
+  {d:'charity', q:'在帮助别人时，我很少去计算对方将来能回报我什么，这种付出本身就让我满足。'}, 
+  {d:'charity', q:'即便自身的条件并不充裕，但看到他人陷入困境时，我依然会本能地想要施以援手。'}, 
+  {d:'charity', q:'我愿意将自己的资源或时间分享给他人，看到别人因此变好会给我带来极大的意义感。'}, 
+  // 贞洁
+  {d:'chastity', q:'即便面对极大的诱惑，我也能在关键时刻保持理智，坚守自己的底线。'}, 
+  {d:'chastity', q:'在缺乏情感共鸣的情况下，仅凭一时氛围产生的亲密接触，会让我感到本能的抗拒。'}, 
+  {d:'chastity', q:'在关系尚未明确或缺乏深度情感连接时，我能够很好地控制身体的冲动与边界。'}, 
+  // 仁爱
+  {d:'kindness', q:'哪怕有人得罪过我，我也很少在心里长期记恨，通常能够较快地释怀。'}, 
+  {d:'kindness', q:'我很容易敏锐地察觉到周围人的情绪变化，并愿意主动提供情绪价值。'}, 
+  {d:'kindness', q:'我会主动去关注弱势群体或身边受伤的人，并希望能为他们做点什么。'}, 
+  // 耐心
+  {d:'patience', q:'被人误解或面对突发状况时，我会先深呼吸，尽量用平和的方式去解决。'}, 
+  {d:'patience', q:'面对无法立刻看到结果的事情，我通常有足够的定力去等待，不会感到焦躁。'}, 
+  {d:'patience', q:'对于见效很慢、需要长期投入的事情，我依然能沉得住气，按部就班地去坚持。'}, 
+  // 节制
+  {d:'temperance', q:'我能够很好地控制自己的休闲时间，极少因为过度娱乐而打乱生活节奏。'}, 
+  {d:'temperance', q:'我很少通过报复性消费、暴饮暴食或通宵熬夜来发泄情绪，我能管住自己。'}, 
+  {d:'temperance', q:'我很少因为一时冲动而做出不理智的决定，通常能够克制住当下的欲望。'}, 
+  // 勤勉
+  {d:'diligence', q:'哪怕没有外界监督，我依然能凭着极强的行动力，去完成自己的目标。'}, 
+  {d:'diligence', q:'哪怕已经取得阶段性成果，我也不会停下精进自我的脚步。'}, 
+  {d:'diligence', q:'我倾向于想到就立刻去行动，而不是一直停留在计划和设想阶段。'}
+];
+
+// 随机打乱与交叉逻辑
+function shuffle(array) {
+  let currentIndex = array.length, randomIndex;
+  while (currentIndex != 0) {
+    randomIndex = Math.floor(Math.random() * currentIndex);
+    currentIndex--;
+    [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+  }
+  return array;
+}
+
+const sinQs = shuffle(RAW_QS.filter(q => SINS[q.d]));
+const virtueQs = shuffle(RAW_QS.filter(q => VIRTUES[q.d]));
+const QS = [];
+
+// 每6题交叉
+for (let i = 0; i < 21; i += 6) {
+  QS.push(...sinQs.slice(i, Math.min(i + 6, 21)));
+  QS.push(...virtueQs.slice(i, Math.min(i + 6, 21)));
+}
+
+const OPTIONS = [{ v:1, t:'完全不符合' }, { v:2, t:'不太符合' }, { v:3, t:'一般' }, { v:4, t:'比较符合' }, { v:5, t:'完全符合' }];
+const TOTAL = QS.length;
+let idx = 0, answers = Array(TOTAL).fill(0), locked = false;
+let cSLists, cVLists;
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  $('#' + id).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+$('#authBtn').onclick = () => {
+  if ($('#codeInput').value.trim() === ACCESS_CODE) showScreen('intro');
+  else { $('#authError').classList.add('show'); $('#codeInput').value = ''; }
+};
+$('#codeInput').oninput = () => $('#authError').classList.remove('show');
+
+$('#startBtn').onclick = () => { 
+  // 重新随机打乱并交叉
+  const nSinQs = shuffle(RAW_QS.filter(q => SINS[q.d]));
+  const nVirtueQs = shuffle(RAW_QS.filter(q => VIRTUES[q.d]));
+  QS.length = 0;
+  for (let i = 0; i < 21; i += 6) {
+    QS.push(...nSinQs.slice(i, Math.min(i + 6, 21)));
+    QS.push(...nVirtueQs.slice(i, Math.min(i + 6, 21)));
+  }
+  
+  idx = 0; answers.fill(0); locked = false; showScreen('quiz'); renderQ(); 
+};
+$('#restart').onclick = () => showScreen('intro');
+
+$('#backBtn').onclick = () => {
+  if (idx > 0) {
+    idx--;
+    renderQ();
+  } else {
+    showScreen('intro');
+  }
+};
+
+function renderQ() {
+  if (idx >= TOTAL) return showResult();
+  const q = QS[idx];
+  const isSin = SINS[q.d] !== undefined;
+  
+  const quiz = $('#quiz');
+  quiz.className = 'screen active ' + (isSin ? '' : 'theme-virtue');
+
+  $('#quizPhase').textContent = isSin ? '七宗罪' : '七美德';
+  $('#quizCount').textContent = `${String(idx+1).padStart(2,'0')} / ${TOTAL}`;
+  $('#qNum').textContent = String(idx+1).padStart(2,'0');
+  $('#qLabel').textContent = isSin ? 'SIN' : 'VIRTUE';
+  $('#progressFill').style.width = ((idx + 1) / TOTAL * 100) + '%';
+  $('#qText').textContent = q.q;
+
+  const box = $('#options'); box.innerHTML = '';
+  const svgStr = isSin 
+    ? '<svg viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>' 
+    : '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="22"/><line x1="2" y1="12" x2="4" y2="12"/><line x1="20" y1="12" x2="22" y2="12"/><line x1="5" y1="5" x2="6.5" y2="6.5"/><line x1="17.5" y1="17.5" x2="19" y2="19"/><line x1="5" y1="19" x2="6.5" y2="17.5"/><line x1="17.5" y1="6.5" x2="19" y2="5"/></svg>';
+
+  OPTIONS.forEach(o => {
+    const btn = document.createElement('button');
+    btn.className = 'option' + (answers[idx] === o.v ? ' selected' : '');
+    btn.innerHTML = `<span class="mark">${svgStr}</span><span>${o.t}</span>`;
+    btn.onclick = () => {
+      if (locked) return; locked = true;
+      answers[idx] = o.v;
+      document.querySelectorAll('.option').forEach(el => el.classList.remove('selected'));
+      btn.classList.add('selected');
+      setTimeout(() => { locked = false; idx++; renderQ(); }, 200);
+    };
+    box.appendChild(btn);
+  });
+  
+  const backBtn = $('#backBtn');
+  if (idx > 0) {
+    backBtn.style.display = 'flex';
+  } else {
+    backBtn.style.display = 'flex';
+  }
+}
+
+// 调整文案：直接替换极端情况的解读
+function generateSummary(topS, topV, sList, vList) {
+  // 检查极端情况
+  const allSin100 = sList.every(it => it.pct === 100);
+  const allVirtue100 = vList.every(it => it.pct === 100);
+  const allSin0 = sList.every(it => it.pct === 0);
+  const allVirtue0 = vList.every(it => it.pct === 0);
+
+  if (allSin100 && allVirtue100) {
+    return `极致的冲突与克制，欲求与规训同时顶格。你既想放纵一切，又要保持完美，内心充满巨大的能量对撞。`;
+  }
+
+  if (allSin0 && allVirtue0) {
+    return `极致的空无与剥离。本能与道德双双沉寂，你切断了与世界的能量交换，以一种绝对冷漠的姿态将自己从世俗中抽离。`;
+  }
+
+  const sn = topS.n, vn = topV.n;
+  const diff = topV.pct - topS.pct;
+
+  if (topS.pct <= 25 && topV.pct <= 25) {
+    return `你表现出罕见的低欲望与低约束稳态。既缺乏被${sn}支配的野心，也不愿用${vn}的世俗标准伪装自我。你摒弃了外界强加的标签，展现出清醒的超然。`;
+  }
+
+  if (topV.pct <= 25) {
+    return `在美德维度中，你的最高项${vn}仅为${topV.pct}%。你拒绝进行道德伪装，比起成为世俗定义的“好人”，你更看重个人意志的舒展。驱使你行动的核心动力源自${sn}。`;
+  }
+
+  if (topS.pct <= 25) {
+    return `你的七宗罪最高项${sn}仅占${topS.pct}%，表明你极少受到世俗欲望的裹挟。${vn}构成了你人格的底色，赋予你强大的内在秩序感。有时，过度的原则性会让你显得较为克制。`;
+  }
+
+  const pairs = {
+    "傲慢-谦卑": "你内心有着极高的自我评价基准，但理智机制让你在社交中维持得体。这种内外的反差，是你为了规避冲突而建立的成熟防御体系。",
+    "暴食-勤勉": "你呈现出典型的代偿性行为模式。在高度消耗的勤勉状态后，大脑本能地寻求多巴胺与物质慰藉。这并非缺乏自律，而是高压运转后的心理补偿。",
+    "色欲-贞洁": "你具有敏锐的感官捕捉力，但严密的理智防线会在越界前及时踩下刹车。本质上，你对失控的恐惧，远大于对欲望本身的渴求。",
+    "贪婪-慷慨": "你对资源有着深刻的渴望，却又极度看重社会体面。在慷慨解囊的背后，往往隐藏着对匮乏感的掩饰，以及对自身社会形象的维护。",
+    "暴怒-耐心": "你习惯在平时压抑真实情绪以维持理性，但情绪的阈值一旦被冲破，便容易产生爆发性表达。愤怒的内核，往往源于个体边界受到侵犯。",
+    "懒惰-勤勉": "你在低价值感的事务上极易拖延，但在明确的目标前又能爆发出极强的执行力。你缺乏的并非行动能力，而是深层的内在驱动力。",
+    "嫉妒-仁爱": "你对他人的拥有物具有高度敏锐的感知，容易在比较中产生心理落差。但你的攻击性向内收敛，转化为了不甘，而非恶意破坏。",
+    "贪婪-勤勉": "你极度务实，将获取物质安全感视为行动的绝对基石。为了达成目标，你能够忍受枯燥与疲惫，深信握在手中的资源才是真实的。",
+    "傲慢-仁爱": "你具备极强的个人主见与独立判断力，不轻易盲从。虽然外表显得疏离，但对于被你纳入保护圈的人，你会展现出极致的护短与柔软。",
+    "暴食-节制": "你对感官刺激有较高的要求与品位，但始终将享受控制在安全边界内。你在体验生活与自我掌控之间，维持着游刃有余的动态平衡。"
+  };
+
+  const pairKey = `${sn}-${vn}`;
+  if (pairs[pairKey]) return pairs[pairKey];
+
+  if (diff >= 30) {
+    return `你的行为高度受制于${vn}。你行事极度理性，极少被情绪左右。这赋予了你极高的可靠性，但过度的规则与道德感，也会无形中拉开你与他人的距离。`;
+  } else if (diff >= 15) {
+    return `你习惯于在体面的框架下行事。虽然${sn}的冲动会偶发，但你总能迅速用${vn}加以约束。你的理智并非消灭欲望，而是对其进行了严格的风险评估。`;
+  } else if (diff >= 5) {
+    return `你展现出清醒且真实的特质。你拥有${sn}带来的世俗欲望，但绝不至于失控，因为${vn}为你兜住了底线。你懂得与人性共处，在现实中游刃有余。`;
+  } else if (diff > -5) {
+    return `你常处于内心的博弈之中。理智诉求你遵循${vn}，而本能力量则推向你走向${sn}。这种持续的拉扯，本质上是你对放纵的渴望与长期利益之间的角力。`;
+  } else if (diff > -15) {
+    return `你的本能力量比理智约束更容易占据上风。你倾向于遵从${sn}带来的直接感受，虽有偶尔的越界，但${vn}依然能发挥基础的兜底作用。你更注重当下的体验。`;
+  } else if (diff > -30) {
+    return `你活得极为舒展与肆意，${sn}主导了你的行事作风。你不屑于外在的伪装，由内而外散发着强烈的个人意志。世俗的规则与束缚，对你而言往往形同虚设。`;
+  } else {
+    return `你高度忠于自身的${sn}本能，几乎不受${vn}的约束。你极其坦诚地面对欲望，这赋予了你充沛的生命力，但极度的随心所欲，也容易在无意中刺伤周遭的人。`;
+  }
+}
+
+function showResult() {
+  const sScores = {}, vScores = {};
+  Object.keys(SINS).forEach(k => sScores[k] = 0);
+  Object.keys(VIRTUES).forEach(k => vScores[k] = 0);
+  
+  QS.forEach((q, i) => {
+    if (SINS[q.d]) sScores[q.d] += answers[i];
+    else vScores[q.d] += answers[i];
+  });
+
+  const sList = Object.keys(SINS).map(k => ({ key:k, ...SINS[k], pct: Math.round((sScores[k]-3)/12*100) })).sort((a,b)=>b.pct-a.pct);
+  const vList = Object.keys(VIRTUES).map(k => ({ key:k, ...VIRTUES[k], pct: Math.round((vScores[k]-3)/12*100) })).sort((a,b)=>b.pct-a.pct);
+
+  cSLists = sList; cVLists = vList;
+
+  $('#topSinName').textContent = sList[0].n;
+  $('#topSinPct').textContent = sList[0].pct + '%';
+  $('#topVirtueName').textContent = vList[0].n;
+  $('#topVirtuePct').textContent = vList[0].pct + '%';
+  
+  $('#summaryText').textContent = generateSummary(sList[0], vList[0], sList, vList);
+
+  const renderList = (list, container) => {
+    container.innerHTML = list.map((it, i) => `
+      <div class="rank-row${i===0?' top':''}">
+        <span class="rank-name">${it.n}</span>
+        <div class="rank-track"><div class="rank-fill" data-w="${it.pct}"></div></div>
+        <span class="rank-val">${it.pct}%</span>
+      </div>
+    `).join('');
+  };
+  renderList(sList, $('#sinRankList'));
+  renderList(vList, $('#virtueRankList'));
+
+  const renderInsights = (list, container) => {
+    container.innerHTML = list.map(it => {
+      let desc = it.tMid;
+      if (it.pct <= 25) desc = it.tLow;
+      else if (it.pct >= 75) desc = it.tHigh;
+      
+      return `
+      <div class="insight-item">
+        <div class="insight-head"><span>${it.n}</span><span>${it.pct}%</span></div>
+        <p class="insight-text">${desc}</p>
+      </div>
+    `}).join('');
+  };
+  renderInsights(sList, $('#sinInsightList'));
+  renderInsights(vList, $('#virtueInsightList'));
+
+  renderSingleRadar('#sinRadar', sList, '#c3a362', '#22221f');
+  renderSingleRadar('#virtueRadar', vList, '#826c39', '#f4f2eb');
+  renderMergedRadar();
+
+  showScreen('result');
+  
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      document.querySelectorAll('.rank-fill').forEach(el => {
+        el.style.width = el.dataset.w + '%';
+      });
+    });
+  });
+}
+
+function renderSingleRadar(sel, list, color, bg) {
+  const svg = document.querySelector(sel);
+  const cx=150, cy=150, maxR=90, n=list.length, step=Math.PI*2/n;
+  svg.innerHTML = ''; const ns='http://www.w3.org/2000/svg';
+  
+  for(let l=1;l<=5;l++){
+    let d='', r=maxR/5*l;
+    for(let i=0;i<n;i++){ let a=-Math.PI/2+i*step; d+=(i===0?'M':'L')+(cx+Math.cos(a)*r)+','+(cy+Math.sin(a)*r); }
+    const p=document.createElementNS(ns,'path'); p.setAttribute('d',d+'Z'); p.setAttribute('fill','none'); p.setAttribute('stroke',color); p.setAttribute('stroke-opacity', l===5 ? '0.4' : '0.2'); svg.appendChild(p);
+  }
+  for(let i=0;i<n;i++){
+    let a=-Math.PI/2+i*step;
+    const line=document.createElementNS(ns,'line'); line.setAttribute('x1',cx); line.setAttribute('y1',cy); line.setAttribute('x2',cx+Math.cos(a)*maxR); line.setAttribute('y2',cy+Math.sin(a)*maxR); line.setAttribute('stroke',color); line.setAttribute('stroke-opacity','.25'); svg.appendChild(line);
+  }
+  
+  let pts='';
+  list.forEach((it,i)=>{ let a=-Math.PI/2+i*step, r=Math.max((it.pct/100)*maxR, 4); pts+=(i===0?'':' ')+(cx+Math.cos(a)*r)+','+(cy+Math.sin(a)*r); });
+  const poly=document.createElementNS(ns,'polygon'); poly.setAttribute('points',pts); poly.setAttribute('fill',color); poly.setAttribute('fill-opacity','.15'); poly.setAttribute('stroke',color); poly.setAttribute('stroke-width','2'); svg.appendChild(poly);
+
+  list.forEach((it,i)=>{
+    let a=-Math.PI/2+i*step, r=Math.max((it.pct/100)*maxR, 4), x=cx+Math.cos(a)*r, y=cy+Math.sin(a)*r;
+    const c=document.createElementNS(ns,'circle'); c.setAttribute('cx',x); c.setAttribute('cy',y); c.setAttribute('r','3.5'); c.setAttribute('fill',bg); c.setAttribute('stroke',color); c.setAttribute('stroke-width','1.5'); svg.appendChild(c);
+    
+    let lr=maxR+28, lx=cx+Math.cos(a)*lr, ly=cy+Math.sin(a)*lr;
+    const t=document.createElementNS(ns,'text'); t.setAttribute('x',lx); t.setAttribute('y',ly); t.setAttribute('text-anchor','middle'); t.setAttribute('dominant-baseline','middle'); t.setAttribute('font-size','12'); t.setAttribute('font-weight','bold'); t.setAttribute('fill',color); t.setAttribute('font-family','sans-serif'); t.textContent=it.n; svg.appendChild(t);
+  });
+}
+
+function renderMergedRadar() {
+  const svg = $('#mergedRadar');
+  const cx=170, cy=160, maxR=90, n=14, step=Math.PI*2/n;
+  svg.innerHTML=''; const ns='http://www.w3.org/2000/svg';
+  
+  const sMap={}, vMap={};
+  cSLists.forEach(x=>sMap[x.key]=x); cVLists.forEach(x=>vMap[x.key]=x);
+  
+  const sOrder=['pride', 'greed', 'lust', 'envy', 'wrath', 'gluttony', 'sloth'];
+  const vOrder=['humility', 'charity', 'chastity', 'kindness', 'patience', 'temperance', 'diligence'];
+  
+  const data = [];
+  sOrder.forEach((k,i)=>data.push({ val:sMap[k].pct, type:'s', ang:-Math.PI/2 - i*step, name:sMap[k].n }));
+  vOrder.forEach((k,i)=>data.push({ val:vMap[k].pct, type:'v', ang:-Math.PI/2 - (i+7)*step, name:vMap[k].n }));
+
+  for(let l=1;l<=5;l++){
+    let d='', r=maxR/5*l;
+    for(let i=0;i<n;i++){ let a=-Math.PI/2+i*step; d+=(i===0?'M':'L')+(cx+Math.cos(a)*r)+','+(cy+Math.sin(a)*r); }
+    const p=document.createElementNS(ns,'path'); p.setAttribute('d',d+'Z'); p.setAttribute('fill','none'); p.setAttribute('stroke','#dcd8ce'); p.setAttribute('stroke-width','1'); svg.appendChild(p);
+  }
+  for(let i=0;i<n;i++){ let a=-Math.PI/2+i*step; const line=document.createElementNS(ns,'line'); line.setAttribute('x1',cx); line.setAttribute('y1',cy); line.setAttribute('x2',cx+Math.cos(a)*maxR); line.setAttribute('y2',cy+Math.sin(a)*maxR); line.setAttribute('stroke','#e8e5dc'); svg.appendChild(line); }
+
+  let sPts = '';
+  data.slice(0,7).forEach((d,i)=>{ let r=Math.max((d.val/100)*maxR, 4); sPts+=(i===0?'':' ')+(cx+Math.cos(d.ang)*r)+','+(cy+Math.sin(d.ang)*r); });
+  sPts += ` ${cx},${cy}`;
+  const sPoly=document.createElementNS(ns,'polygon'); sPoly.setAttribute('points',sPts); sPoly.setAttribute('fill','#b0ada6'); sPoly.setAttribute('fill-opacity','.4'); sPoly.setAttribute('stroke','#555'); sPoly.setAttribute('stroke-width','2'); svg.appendChild(sPoly);
+
+  let vPts = '';
+  data.slice(7).forEach((d,i)=>{ let r=Math.max((d.val/100)*maxR, 4); vPts+=(i===0?'':' ')+(cx+Math.cos(d.ang)*r)+','+(cy+Math.sin(d.ang)*r); });
+  vPts += ` ${cx},${cy}`;
+  const vPoly=document.createElementNS(ns,'polygon'); vPoly.setAttribute('points',vPts); vPoly.setAttribute('fill','#c3a362'); vPoly.setAttribute('fill-opacity','.4'); vPoly.setAttribute('stroke','#826c39'); vPoly.setAttribute('stroke-width','2'); svg.appendChild(vPoly);
+
+  data.forEach((d,i)=>{
+    let lr=maxR+32, lx=cx+Math.cos(d.ang)*lr, ly=cy+Math.sin(d.ang)*lr;
+    let anchor='middle';
+    if(Math.cos(d.ang)>0.1) anchor='start'; else if(Math.cos(d.ang)<-0.1) anchor='end';
+    
+    const textColor = d.type === 's' ? '#333' : '#826c39';
+    const scoreColor = d.type === 's' ? '#666' : '#826c39';
+
+    const t=document.createElementNS(ns,'text'); t.setAttribute('x',lx); t.setAttribute('y',ly); t.setAttribute('text-anchor',anchor); t.setAttribute('dominant-baseline','middle'); t.setAttribute('font-size','12'); t.setAttribute('font-weight','bold'); t.setAttribute('fill',textColor); t.setAttribute('font-family','sans-serif'); t.textContent = d.name; svg.appendChild(t);
+
+    const scoreT=document.createElementNS(ns,'text'); scoreT.setAttribute('x',lx); scoreT.setAttribute('y',ly + (ly<cy?-16:16)); scoreT.setAttribute('text-anchor',anchor); scoreT.setAttribute('dominant-baseline','middle'); scoreT.setAttribute('font-size','11'); scoreT.setAttribute('font-family','sans-serif'); scoreT.setAttribute('fill',scoreColor); scoreT.textContent = d.val + '%'; svg.appendChild(scoreT);
+  });
+}
+
+window.saveMergedImage = async function(btn) {
+  const orig = btn.textContent; btn.textContent = '生成中…'; btn.disabled = true;
+  await new Promise(r => setTimeout(r, 100));
+  
+  const cvs = document.createElement('canvas'), W=400, H=480;
+  cvs.width=W*2; cvs.height=H*2;
+  const ctx = cvs.getContext('2d'); ctx.scale(2,2);
+  
+  ctx.fillStyle = '#ffffff'; ctx.fillRect(0,0,W,H);
+  ctx.fillStyle = '#1a1a1a'; ctx.font = 'bold 20px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  ctx.fillText('十四维人格全貌', W/2, 40);
+  
+  ctx.fillStyle = '#888'; ctx.font = '12px sans-serif';
+  ctx.fillText('左侧为七宗罪，右侧为七美德', W/2, 75);
+
+  const cx=W/2, cy=260, maxR=90, n=14, step=Math.PI*2/n;
+  const sMap={}, vMap={}; cSLists.forEach(x=>sMap[x.key]=x); cVLists.forEach(x=>vMap[x.key]=x);
+  
+  const sOrder=['pride', 'greed', 'lust', 'envy', 'wrath', 'gluttony', 'sloth'];
+  const vOrder=['humility', 'charity', 'chastity', 'kindness', 'patience', 'temperance', 'diligence'];
+  
+  const data = [];
+  sOrder.forEach((k,i)=>data.push({ val:sMap[k].pct, type:'s', ang:-Math.PI/2 - i*step, name:sMap[k].n }));
+  vOrder.forEach((k,i)=>data.push({ val:vMap[k].pct, type:'v', ang:-Math.PI/2 - (i+7)*step, name:vMap[k].n }));
+
+  ctx.strokeStyle = '#dcd8ce'; ctx.lineWidth = 1;
+  for(let l=1;l<=5;l++){
+    let d='', r=maxR/5*l;
+    for(let i=0;i<n;i++){ let a=-Math.PI/2+i*step; d+=(i===0?'M':'L')+(cx+Math.cos(a)*r)+','+(cy+Math.sin(a)*r); }
+    ctx.stroke(new Path2D(d+'Z'));
+  }
+  for(let i=0;i<n;i++){ let a=-Math.PI/2+i*step; ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(cx+Math.cos(a)*maxR, cy+Math.sin(a)*maxR); ctx.strokeStyle='#e8e5dc'; ctx.stroke(); }
+
+  ctx.beginPath();
+  ctx.moveTo(cx, cy);
+  data.slice(0,7).forEach((d)=>{ let r=Math.max((d.val/100)*maxR, 4); ctx.lineTo(cx+Math.cos(d.ang)*r, cy+Math.sin(d.ang)*r); });
+  ctx.closePath();
+  ctx.fillStyle='#e8e8e8'; ctx.strokeStyle='#555'; ctx.lineWidth=2; ctx.fill(); ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(cx, cy);
+  data.slice(7).forEach((d)=>{ let r=Math.max((d.val/100)*maxR, 4); ctx.lineTo(cx+Math.cos(d.ang)*r, cy+Math.sin(d.ang)*r); });
+  ctx.closePath();
+  ctx.fillStyle='#f4e8d3'; ctx.strokeStyle='#826c39'; ctx.lineWidth=2; ctx.fill(); ctx.stroke();
+
+  ctx.textBaseline = 'middle';
+  data.forEach((d)=>{
+    let lr=maxR+28, lx=cx+Math.cos(d.ang)*lr, ly=cy+Math.sin(d.ang)*lr;
+    
+    ctx.textAlign = 'center';
+    if (Math.cos(d.ang) > 0.1) { ctx.textAlign = 'left'; lx += 2; } 
+    else if (Math.cos(d.ang) < -0.1) { ctx.textAlign = 'right'; lx -= 2; }
+
+    ctx.fillStyle = d.type==='s'?'#333':'#826c39'; ctx.font = 'bold 13px sans-serif'; 
+    ctx.fillText(d.name, lx, ly - 10);
+    ctx.fillStyle = d.type==='s'?'#666':'#826c39'; ctx.font = '12px "Times New Roman", "Songti SC", "STSong", serif'; 
+    ctx.fillText(d.val + '%', lx, ly + 10);
+  });
+
+  $('#previewImg').src = cvs.toDataURL('image/png');
+  $('#previewMask').classList.add('show');
+  btn.textContent = orig; btn.disabled = false;
+};
+
+window.saveImage = async function(type, btn) {
+  const orig = btn.textContent; btn.textContent = '生成中…'; btn.disabled = true;
+  await new Promise(r => setTimeout(r, 100));
+
+  const isSin = type === 'sin';
+  const listData = isSin ? cSLists : cVLists;
+  const bg = isSin ? '#22221f' : '#f4f2eb';
+  const textColor = isSin ? '#dfd8cb' : '#33312d';
+  const accentColor = isSin ? '#c3a362' : '#826c39';
+
+  const cvs = document.createElement('canvas'), W=400, H=660; 
+  cvs.width=W*2; cvs.height=H*2;
+  const ctx = cvs.getContext('2d'); ctx.scale(2,2);
+  ctx.fillStyle = bg; ctx.fillRect(0,0,W,H);
+  
+  ctx.fillStyle = accentColor; ctx.font = 'bold 20px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline='top';
+  ctx.fillText(isSin ? '七宗罪倾向报告' : '七美德倾向报告', W/2, 35);
+  
+  const cx=W/2, cy=190, maxR=65, n=7, step=Math.PI*2/n;
+  ctx.strokeStyle = accentColor; ctx.lineWidth = 1;
+  for(let l=1;l<=5;l++){
+    let d='', r=maxR/5*l;
+    for(let i=0;i<n;i++){ let a=-Math.PI/2+i*step; d+=(i===0?'M':'L')+(cx+Math.cos(a)*r)+','+(cy+Math.sin(a)*r); }
+    ctx.beginPath(); ctx.globalAlpha = l===5?0.4:0.2; ctx.strokeStyle=accentColor; ctx.stroke(new Path2D(d+'Z'));
+  }
+  ctx.globalAlpha = 1;
+  for(let i=0;i<n;i++){ let a=-Math.PI/2+i*step; ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(cx+Math.cos(a)*maxR, cy+Math.sin(a)*maxR); ctx.globalAlpha=0.25; ctx.strokeStyle=accentColor; ctx.stroke(); }
+  ctx.globalAlpha = 1;
+  
+  ctx.beginPath();
+  listData.forEach((it,i)=>{ 
+    let a=-Math.PI/2+i*step, r=Math.max((it.pct/100)*maxR, 4); 
+    let x = cx+Math.cos(a)*r, y = cy+Math.sin(a)*r;
+    if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); 
+  });
+  ctx.closePath(); 
+  ctx.fillStyle=accentColor; ctx.globalAlpha=0.15; ctx.fill(); ctx.globalAlpha=0.8; ctx.stroke(); ctx.globalAlpha=1;
+  
+  ctx.textBaseline = 'middle';
+  listData.forEach((it,i)=>{ 
+    let a=-Math.PI/2+i*step, lr=maxR+24, lx=cx+Math.cos(a)*lr, ly=cy+Math.sin(a)*lr;
+    
+    ctx.textAlign = 'center'; 
+    ctx.fillStyle = textColor; ctx.font = 'bold 12px sans-serif';
+    ctx.fillText(it.n, lx, ly-8);
+    
+    ctx.fillStyle = accentColor; ctx.font = '12px "Times New Roman", "Songti SC", "STSong", serif'; 
+    ctx.fillText(it.pct + '%', lx, ly+10);
+  });
+
+  let y = 300, px = 40, bw = W-80-60;
+  ctx.textBaseline = 'top';
+  listData.forEach(it => {
+    ctx.textAlign='left'; ctx.fillStyle=accentColor; ctx.font='bold 14px sans-serif'; ctx.fillText(it.n, px, y - 8);
+    
+    ctx.font='14px "Times New Roman", "Songti SC", "STSong", serif';
+    let pctStr = it.pct + '%';
+    let textWidth = ctx.measureText(pctStr).width;
+    
+    ctx.textAlign='left'; 
+    ctx.fillText(pctStr, W - px - textWidth, y + 6);
+    
+    y += 18;
+    ctx.fillStyle=isSin?'rgba(255,255,255,0.08)':'rgba(0,0,0,0.08)'; 
+    ctx.beginPath(); ctx.roundRect(px, y, bw, 6, 3); ctx.fill();
+    
+    ctx.fillStyle=accentColor; 
+    ctx.beginPath(); ctx.roundRect(px, y, Math.max(bw*(it.pct/100),6), 6, 3); ctx.fill();
+    
+    y += 32;
+  });
+
+  $('#previewImg').src = cvs.toDataURL('image/png');
+  $('#previewMask').classList.add('show');
+  btn.textContent = orig; btn.disabled = false;
+};
+
+$('#previewClose').onclick = () => $('#previewMask').classList.remove('show');
+</script>
+</body>
+</html>
